@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 """ Console Module """
 import cmd
-import re
 import sys
 from models.base_model import BaseModel
 from models.__init__ import storage
@@ -74,7 +73,7 @@ class HBNBCommand(cmd.Cmd):
                 pline = pline[2].strip()  # pline is now str
                 if pline:
                     # check for *args or **kwargs
-                    if pline[0] == '{' and pline[-1] =='}'\
+                    if pline[0] == '{' and pline[-1] == '}'\
                             and type(eval(pline)) is dict:
                         _args = pline
                     else:
@@ -115,53 +114,25 @@ class HBNBCommand(cmd.Cmd):
         pass
 
     def do_create(self, args):
-        """Create an object of any class"""
-        if not args:
+        """ Create an object of any class"""
+        try:
+            if not args:
+                raise SyntaxError()
+            arg_list = args.split(" ")
+            kw = {}
+            for arg in arg_list[1:]:
+                arg_splited = arg.split("=")
+                arg_splited[1] = eval(arg_splited[1])
+                if type(arg_splited[1]) is str:
+                    arg_splited[1] = arg_splited[1].replace("_", " ").replace('"', '\\"')
+                kw[arg_splited[0]] = arg_splited[1]
+        except SyntaxError:
             print("** class name missing **")
-            return
-
-        model_name = args.split()[0]
-        if model_name not in HBNBCommand.classes:
+        except NameError:
             print("** class doesn't exist **")
-            return
-
-        new_instance = HBNBCommand.classes[model_name]()
-        if len(args.split()) > 1:
-            # there's a string of attributes to parse
-            new_instance.__dict__.update(self.get_attributes(args))
-
+        new_instance = HBNBCommand.classes[arg_list[0]](**kw)
         new_instance.save()
         print(new_instance.id)
-
-    @staticmethod
-    def get_attributes(args):
-        """Returns a dictionary of attributes from a string"""
-        pattern = re.compile(r"(\w+)=([^\s]*)")
-        attributes = dict(pattern.findall(args))
-
-        if len(attributes) == 0:
-            return {}
-
-        keys = list(attributes.keys())
-        for key in keys:
-            value = attributes[key]
-            # check for strings, also we will not accept strings with spaces
-            if value[0] == '"' and value[-1] == '"':
-                value = value[1:-1]
-                value = value.replace("_", " ").replace('"', '"')
-                attributes[key] = value
-            elif "." in value:
-                try:
-                    attributes[key] = float(value)
-                except ValueError:
-                    del attributes[key]
-            else:
-                try:
-                    attributes[key] = int(value)
-                except ValueError:
-                    del attributes[key]
-
-        return attributes
 
     def help_create(self):
         """ Help information for the create method """
@@ -243,13 +214,11 @@ class HBNBCommand(cmd.Cmd):
             if args not in HBNBCommand.classes:
                 print("** class doesn't exist **")
                 return
-            for k, v in storage._FileStorage__objects.items():
-                if k.split('.')[0] == args:
-                    print_list.append(str(v))
-        else:
-            for k, v in storage._FileStorage__objects.items():
+            for k, v in storage.all(HBNBCommand.classes[args]).items():
                 print_list.append(str(v))
-
+        else:
+            for k, v in storage.all().items():
+                print_list.append(str(v))
         print(print_list)
 
     def help_all(self):
@@ -356,7 +325,6 @@ class HBNBCommand(cmd.Cmd):
         """ Help information for the update class """
         print("Updates an object with new information")
         print("Usage: update <className> <id> <attName> <attVal>\n")
-
 
 if __name__ == "__main__":
     HBNBCommand().cmdloop()
