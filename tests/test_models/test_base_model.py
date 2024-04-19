@@ -47,7 +47,6 @@ class test_basemodel(unittest.TestCase):
         with self.assertRaises(TypeError):
             new = BaseModel(**copy)
 
-    @unittest.skipIf(os.getenv("HBNB_TYPE_STORAGE") == "db", "file")
     def test_save(self):
         """ Testing save """
         i = self.value()
@@ -86,13 +85,11 @@ class test_basemodel(unittest.TestCase):
         new = self.value()
         self.assertEqual(type(new.id), str)
 
-    @unittest.skipIf(os.getenv("HBNB_TYPE_STORAGE") == "db", "file")
     def test_created_at(self):
         """ """
         new = self.value()
         self.assertEqual(type(new.created_at), datetime.datetime)
 
-    @unittest.skipIf(os.getenv("HBNB_TYPE_STORAGE") == "db", "file"
     def test_updated_at(self):
         """ """
         new = self.value()
